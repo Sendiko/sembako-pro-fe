@@ -71,6 +71,7 @@ export function StoreDashboard() {
   const [groceriesLoading, setGroceriesLoading] = useState(false);
   const [transactionsLoading, setTransactionsLoading] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
+  const [groceryFormError, setGroceryFormError] = useState<string | null>(null);
   const [storeModalOpen, setStoreModalOpen] = useState(false);
   const [groceryModalOpen, setGroceryModalOpen] = useState(false);
   const [stockEditGrocery, setStockEditGrocery] = useState<Grocery | null>(null);
@@ -87,6 +88,7 @@ export function StoreDashboard() {
   const [gPrice, setGPrice] = useState<number | "">("");
   const [gQuantity, setGQuantity] = useState<number | "">("");
   const [gImageUrl, setGImageUrl] = useState("");
+  const [gImageFile, setGImageFile] = useState<File | null>(null);
   const [newStockQty, setNewStockQty] = useState(0);
 
   const selectedGrocery = groceries.find((item) => item.id === selectedGroceryId) ?? null;
@@ -189,6 +191,8 @@ export function StoreDashboard() {
     setGPrice("");
     setGQuantity("");
     setGImageUrl("");
+    setGImageFile(null);
+    setGroceryFormError(null);
   };
 
   const openNewGrocery = () => {
@@ -203,24 +207,34 @@ export function StoreDashboard() {
     setGPrice(item.price);
     setGQuantity("");
     setGImageUrl(item.imageUrl ?? "");
+    setGImageFile(null);
+    setGroceryFormError(null);
     setGroceryModalOpen(true);
   };
 
   const handleSaveGrocery = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setGroceryFormError(null);
     if (!activeStoreId || gPrice === "") {
-      setNotice({ type: "error", message: "Lengkapi nama, satuan, dan harga barang." });
+      setGroceryFormError("Lengkapi nama, satuan, dan harga barang.");
+      return;
+    }
+    if (!gImageFile && !gImageUrl.trim()) {
+      setGroceryFormError("Pilih foto atau masukkan URL gambar untuk barang ini.");
       return;
     }
     setGrocerySaving(true);
     try {
+      const imageUrl = gImageFile
+        ? await api.uploadImage(gImageFile)
+        : gImageUrl.trim() || undefined;
       if (editingGrocery) {
         await api.updateGrocery(editingGrocery.id, {
           storeId: activeStoreId,
           name: gName.trim(),
           unit: gUnit.trim(),
           price: Number(gPrice),
-          imageUrl: gImageUrl.trim() || undefined,
+          imageUrl,
         });
         setNotice({ type: "success", message: "Perubahan barang berhasil disimpan." });
       } else {
@@ -230,7 +244,7 @@ export function StoreDashboard() {
           unit: gUnit.trim(),
           price: Number(gPrice),
           quantity: gQuantity === "" ? 0 : Number(gQuantity),
-          imageUrl: gImageUrl.trim() || undefined,
+          imageUrl,
         });
         setNotice({ type: "success", message: "Barang baru berhasil ditambahkan." });
       }
@@ -238,7 +252,7 @@ export function StoreDashboard() {
       resetGroceryForm();
       await refreshStoreData();
     } catch (error) {
-      setNotice({ type: "error", message: getErrorMessage(error, "Barang gagal disimpan.") });
+      setGroceryFormError(getErrorMessage(error, "Barang gagal disimpan."));
     } finally {
       setGrocerySaving(false);
     }
@@ -318,24 +332,6 @@ export function StoreDashboard() {
             <span className="brand-mark"><ShoppingBag size={21} /></span>
             <span className="brand-title">Sembako<span>Pro</span></span>
           </a>
-          <div className="header-store">
-            <label htmlFor="active-store">TOKO AKTIF</label>
-            <div className="store-select-wrap">
-              <Store size={17} />
-              <select
-                id="active-store"
-                value={activeStoreId ?? ""}
-                onChange={(event) => setActiveStoreId(Number(event.target.value))}
-                aria-label="Pilih toko aktif"
-              >
-                {stores.map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}
-              </select>
-              <ChevronDown size={16} />
-            </div>
-            <button className="icon-button add-store-button" onClick={() => setStoreModalOpen(true)} aria-label="Tambah toko">
-              <Plus size={19} />
-            </button>
-          </div>
           <div className="header-profile">
             <span className={`connection-indicator ${healthStatus}`} title={`Status server: ${healthStatus}`}>
               <Activity size={15} />
@@ -364,6 +360,25 @@ export function StoreDashboard() {
             <span>Perbarui</span>
           </button>
         </section>
+
+        <div className="dashboard-store-row">
+          <label htmlFor="active-store">TOKO AKTIF</label>
+          <div className="store-select-wrap">
+            <Store size={17} />
+            <select
+              id="active-store"
+              value={activeStoreId ?? ""}
+              onChange={(event) => setActiveStoreId(Number(event.target.value))}
+              aria-label="Pilih toko aktif"
+            >
+              {stores.map((store) => <option key={store.id} value={store.id}>{store.name}</option>)}
+            </select>
+            <ChevronDown size={16} />
+          </div>
+          <button className="icon-button add-store-button" onClick={() => setStoreModalOpen(true)} aria-label="Tambah toko">
+            <Plus size={19} />
+          </button>
+        </div>
 
         {notice && (
           <div className={`notice notice-${notice.type}`} role={notice.type === "error" ? "alert" : "status"}>
@@ -639,8 +654,19 @@ export function StoreDashboard() {
                 <label>Harga Jual<div className="currency-input"><span>Rp</span><input type="number" min="0" value={gPrice} onChange={(event) => setGPrice(event.target.value === "" ? "" : Number(event.target.value))} placeholder="0" required /></div></label>
               </div>
               {!editingGrocery && <label>Stok Awal<input type="number" min="0" value={gQuantity} onChange={(event) => setGQuantity(event.target.value === "" ? "" : Number(event.target.value))} placeholder="0" /></label>}
-              <label>URL Gambar <span className="optional">(opsional)</span><input type="url" value={gImageUrl} onChange={(event) => setGImageUrl(event.target.value)} placeholder="https://..." /></label>
-              <div className="modal-actions"><button type="button" className="button button-secondary" onClick={() => { setGroceryModalOpen(false); resetGroceryForm(); }}>Batal</button><button type="submit" className="button button-primary" disabled={grocerySaving}>{grocerySaving ? "Menyimpan..." : editingGrocery ? "Simpan Perubahan" : "Tambah Barang"}</button></div>
+              {groceryFormError && <div className="notice notice-error" role="alert"><AlertTriangle size={17} /><span>{groceryFormError}</span></div>}
+              <label>Unggah Foto <span className="optional">(atau isi URL di bawah)</span><input type="file" accept="image/*" onChange={(event) => {
+                const file = event.target.files?.[0] ?? null;
+                if (file && !file.type.startsWith("image/")) {
+                  setGroceryFormError("Pilih file gambar yang valid.");
+                  event.target.value = "";
+                  return;
+                }
+                setGImageFile(file);
+                setGroceryFormError(null);
+              }} /></label>
+              <label>URL Gambar <span className="optional">(atau unggah foto di atas)</span><input type="url" value={gImageUrl} onChange={(event) => { setGImageUrl(event.target.value); setGImageFile(null); setGroceryFormError(null); }} placeholder="https://..." /></label>
+              <div className="modal-actions"><button type="button" className="button button-secondary" onClick={() => { setGroceryModalOpen(false); resetGroceryForm(); }}>Batal</button><button type="submit" className="button button-primary" disabled={grocerySaving}>{grocerySaving ? gImageFile ? "Mengunggah foto..." : "Menyimpan..." : editingGrocery ? "Simpan Perubahan" : "Tambah Barang"}</button></div>
             </form>
           </section>
         </div>

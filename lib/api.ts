@@ -13,6 +13,19 @@ import {
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "https://sembako.sendiko.my.id";
 
+async function getResponseError(res: Response, fallback: string): Promise<Error> {
+  const body: unknown = await res.json().catch(() => null);
+  if (
+    typeof body === "object" &&
+    body !== null &&
+    "message" in body &&
+    typeof body.message === "string"
+  ) {
+    return new Error(body.message);
+  }
+  return new Error(fallback);
+}
+
 export const api = {
   // User API
   async getUser(id: number): Promise<UserResponse> {
@@ -117,7 +130,7 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(groceryData),
     });
-    if (!res.ok) throw new Error(`Failed to create grocery item`);
+    if (!res.ok) throw await getResponseError(res, "Failed to create grocery item");
     return res.json();
   },
 
@@ -130,7 +143,7 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(groceryData),
     });
-    if (!res.ok) throw new Error(`Failed to update grocery item`);
+    if (!res.ok) throw await getResponseError(res, "Failed to update grocery item");
     return res.json();
   },
 
@@ -192,8 +205,21 @@ export const api = {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ fileName }),
     });
-    if (!res.ok) throw new Error(`Failed to generate presigned upload URL`);
+    if (!res.ok) throw await getResponseError(res, "Failed to generate presigned upload URL");
     return res.json();
+  },
+
+  async uploadImage(file: File): Promise<string> {
+    const { uploadUrl, imageUrl, publicUrl } = await api.getPresignedUrl(file.name);
+    const res = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!res.ok) throw await getResponseError(res, `Failed to upload image: ${res.statusText}`);
+    const uploadedImageUrl = publicUrl ?? imageUrl;
+    if (!uploadedImageUrl) throw new Error("The upload service did not return an image URL.");
+    return uploadedImageUrl;
   },
 
   // Health check API

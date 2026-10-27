@@ -511,11 +511,13 @@ Generates a signed MinIO/S3 URL for direct client-side file uploading.
   ```json
   {
     "status": 200,
-    "message": "Presigned URL generated successfully",
-    "uploadUrl": "https://sembako.sendiko.my.id/public/groceries/my-item.jpg?presigned...",
-    "imageUrl": "https://sembako.sendiko.my.id/public/groceries/my-item.jpg"
+    "message": "Presigned upload URL generated successfully",
+    "uploadUrl": "https://sembako.sendiko.dev/groceries/my-item.jpg?X-Amz-Signature=...",
+    "objectName": "my-item.jpg",
+    "publicUrl": "https://sembako.sendiko.dev/groceries/my-item.jpg"
   }
   ```
+  Older API responses may return `imageUrl` instead of `publicUrl`.
 
 #### `GET /test`
 Server health check monitoring endpoint.

@@ -89,7 +89,8 @@ export interface PresignedUrlResponse {
   status: number;
   message: string;
   uploadUrl: string;
-  imageUrl: string;
+  imageUrl?: string;
+  publicUrl?: string;
 }
 
 export interface HealthCheckResponse {

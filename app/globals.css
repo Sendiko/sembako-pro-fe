@@ -111,12 +111,12 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
 .app-header-inner { max-width: 1240px; min-height: 72px; margin: auto; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; gap: 22px; }
 .brand-title { font-size: 17px; font-weight: 800; letter-spacing: -.045em; }
 .brand-title span { color: var(--primary); }
-.header-store { display: flex; align-items: center; gap: 9px; }
-.header-store > label { color: #64748b; font-size: 9px; font-weight: 800; letter-spacing: .1em; }
 .store-select-wrap { min-height: 42px; min-width: 178px; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; color: var(--primary); background: white; }
 .store-select-wrap select { width: 100%; min-width: 0; border: 0; outline: 0; appearance: none; color: #172033; background: transparent; font-size: 12px; font-weight: 700; }
 .store-select-wrap select:focus-visible { outline: none; }
 .store-select-wrap > svg:last-child { color: #64748b; pointer-events: none; }
+.dashboard-store-row { display: flex; align-items: center; gap: 9px; margin: -8px 0 22px; }
+.dashboard-store-row > label { color: #64748b; font-size: 9px; font-weight: 800; letter-spacing: .1em; }
 .icon-button { min-width: 42px; min-height: 42px; display: inline-grid; place-items: center; padding: 0; border: 1px solid transparent; border-radius: 8px; color: #64748b; background: transparent; transition: .15s; }
 .icon-button:hover { color: var(--primary); background: #f0fdf4; border-color: #bbf7d0; }
 .add-store-button { border-color: var(--line); background: #fff; color: var(--primary); }
@@ -324,11 +324,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .app-header-inner > .brand-lockup { gap: 7px; }
   .brand-lockup .brand-mark { width: 36px; height: 36px; }
   .brand-title { font-size: 14px; }
-  .header-store { gap: 5px; }
-  .header-store > label { display: none; }
-  .store-select-wrap { min-width: 0; max-width: 148px; min-height: 40px; gap: 5px; padding-inline: 7px; }
-  .store-select-wrap select { font-size: 10px; }
-  .add-store-button { min-width: 38px; min-height: 38px; }
   .header-profile { gap: 6px; }
   .connection-indicator { display: none; }
   .profile-name { display: none; }
@@ -336,6 +331,11 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .logout-button { min-width: 35px; min-height: 38px; }
   .dashboard-main { padding: 22px 16px 12px; }
   .welcome-row { align-items: flex-start; gap: 8px; margin-bottom: 19px; }
+  .dashboard-store-row { gap: 7px; margin: -5px 0 18px; }
+  .dashboard-store-row > label { font-size: 8px; }
+  .store-select-wrap { min-width: 0; max-width: min(220px, calc(100vw - 130px)); min-height: 40px; gap: 5px; padding-inline: 7px; }
+  .store-select-wrap select { font-size: 10px; }
+  .add-store-button { min-width: 38px; min-height: 38px; }
   .welcome-row h1 { font-size: 22px; }
   .welcome-row .eyebrow { font-size: 10px; }
   .welcome-subtitle { font-size: 11px; }
@@ -381,8 +381,6 @@ button:focus-visible, a:focus-visible, input:focus-visible, select:focus-visible
   .app-header-inner > .brand-lockup { gap: 5px; }
   .brand-lockup .brand-mark { width: 33px; height: 33px; }
   .brand-title { font-size: 12px; }
-  .store-select-wrap { max-width: 116px; }
-  .store-select-wrap > svg:first-child { display: none; }
   .dashboard-main { padding-inline: 12px; }
   .product-grid { gap: 6px; }
   .product-tile { padding: 7px; }
