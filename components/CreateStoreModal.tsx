@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/context/AuthContext";
-import { Store, X, Plus, Building2, MapPin, Phone, Mail, Loader2 } from "lucide-react";
+import { X, Plus, Building2, Loader2 } from "lucide-react";
 
 export function CreateStoreModal({
   isOpen,
@@ -24,9 +24,12 @@ export function CreateStoreModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-    if (!name || !address || !phone) {
-      setError("Please fill out Name, Address, and Phone number.");
+    if (!user) {
+      setError("Sesi pengguna tidak ditemukan. Silakan masuk kembali.");
+      return;
+    }
+    if (!name.trim() || !address.trim() || !phone.trim()) {
+      setError("Lengkapi nama toko, alamat, dan nomor telepon.");
       return;
     }
 
@@ -36,144 +39,124 @@ export function CreateStoreModal({
     try {
       const res = await api.createStore({
         userId: user.id,
-        name,
-        address,
-        phone,
-        email: email || undefined,
+        name: name.trim(),
+        address: address.trim(),
+        phone: phone.trim(),
+        email: email.trim() || undefined,
       });
 
-      if (res.store) {
-        await refreshStores();
-        const createdStore = Array.isArray(res.store) ? res.store[0] : res.store;
-        if (createdStore?.id) {
-          setActiveStoreId(createdStore.id);
-        }
-        setName("");
-        setAddress("");
-        setPhone("");
-        setEmail("");
-        onClose();
+      if (!res.store) {
+        throw new Error("Server tidak mengembalikan data toko.");
       }
-    } catch (err: any) {
-      setError(err.message || "Failed to create store.");
+
+      await refreshStores();
+      const createdStore = Array.isArray(res.store) ? res.store[0] : res.store;
+      if (createdStore?.id) {
+        setActiveStoreId(createdStore.id);
+      }
+      setName("");
+      setAddress("");
+      setPhone("");
+      setEmail("");
+      onClose();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Toko gagal dibuat.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fade-in">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 shadow-2xl relative">
+    <div className="modal-backdrop" role="presentation" onMouseDown={(event) => {
+      if (event.target === event.currentTarget) onClose();
+    }}>
+      <div className="modal-card" role="dialog" aria-modal="true" aria-labelledby="create-store-title">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"
+          className="icon-button modal-close"
+          aria-label="Tutup"
         >
           <X className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400">
-            <Building2 className="w-6 h-6" />
-          </div>
+        <div className="modal-header">
           <div>
-            <h3 className="text-lg font-semibold text-white">Create New Store</h3>
-            <p className="text-xs text-slate-400">Add a grocery store to your account</p>
+            <p className="eyebrow">LOKASI USAHA</p>
+            <h2 id="create-store-title">Tambah Toko</h2>
+            <p className="modal-subtitle">Daftarkan lokasi toko yang ingin Anda kelola.</p>
           </div>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-red-950/50 border border-red-800/50 text-red-300 text-xs">
+          <div className="notice notice-error">
+            <Building2 size={17} />
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
-              Store Name *
-            </label>
-            <div className="relative">
+        <form onSubmit={handleSubmit} className="modal-form">
+          <label>
+            Nama Toko
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="e.g. Toko Sembako Jaya"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors pl-9"
+                placeholder="Contoh: Toko Sembako Jaya"
                 required
               />
-              <Building2 className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-            </div>
-          </div>
+          </label>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
-              Address *
-            </label>
-            <div className="relative">
+          <label>
+            Alamat Toko
               <input
                 type="text"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder="e.g. Jl. Merdeka No. 123"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors pl-9"
+                placeholder="Contoh: Jl. Merdeka No. 123"
                 required
               />
-              <MapPin className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-            </div>
-          </div>
+          </label>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
-              Phone Number *
-            </label>
-            <div className="relative">
+          <label>
+            Nomor Telepon
               <input
-                type="text"
+                type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                placeholder="e.g. 081234567890"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors pl-9"
+                placeholder="Contoh: 081234567890"
                 required
               />
-              <Phone className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-            </div>
-          </div>
+          </label>
 
-          <div>
-            <label className="block text-xs font-medium text-slate-300 mb-1">
-              Email (Optional)
-            </label>
-            <div className="relative">
+          <label>
+            Email <span className="optional">(opsional)</span>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="e.g. toko@example.com"
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 transition-colors pl-9"
+                placeholder="nama@contoh.com"
               />
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
-            </div>
-          </div>
+          </label>
 
-          <div className="pt-2 flex justify-end gap-3">
+          <div className="modal-actions">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-400 hover:bg-slate-800 text-sm font-medium transition-colors"
+              className="button button-secondary"
             >
-              Cancel
+              Batal
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium shadow-md shadow-emerald-600/20 transition-all cursor-pointer disabled:opacity-50"
+              className="button button-primary"
             >
               {loading ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <>
                   <Plus className="w-4 h-4" />
-                  <span>Create Store</span>
+                  <span>Simpan Toko</span>
                 </>
               )}
             </button>
