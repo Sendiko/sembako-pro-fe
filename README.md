@@ -15,17 +15,22 @@ Open [http://localhost:3000](http://localhost:3000) to see the result.
 
 ## Docker Compose
 
-Copy the required public variables to `.env.local`, then build and start the production container:
+Create a deployment environment file and set the application port and public variables:
 
 ```bash
-bun install
-docker compose --env-file .env.local up --build
+cp .env.example .env
 ```
 
-The `--env-file` flag supplies the `NEXT_PUBLIC_*` values during the image build. Compose also loads `.env.local` into the running container when the file is present.
+Then build and start the production container:
+
+```bash
+docker compose up --build
+```
+
+Compose automatically loads `.env`. `APP_PORT` controls both the Next.js server port and the published host port.
 
 The application is available at [http://localhost:3000](http://localhost:3000). Stop it with:
 
 ```bash
-docker compose --env-file .env.local down
+docker compose down
 ```
